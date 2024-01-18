@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>City List</title>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <link rel="stylesheet" href="css/style.css">
+    <script src="js/script.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/1.6.0/axios.min.js"></script>
+</head>
+<body>
+
+<div class="header">
+    <h2>List Nhân viên</h2>
+    <button onclick="addNhanVien()">Thêm Nhân Viên</button>
+</div>
+<div class="main">
+    <table id="myTable">
+
+    </table>
+</div>
+<script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.2/dist/umd/popper.min.js"></script>
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+<script>
+    function showList() {
+        axios.get('http://localhost:8080/employee').then((res) => {
+            let list = res.data;
+            console.log(list)
+            list.sort((a, b) => a.age - b.age);
+            let str = '<thead>\
+                    <tr>\
+                        <th></th>\
+                        <th>Mã nhân viên</th>\
+                        <th>Tên nhân viên</th>\
+                        <th>Tuổi</th>\
+                        <th>Lương</th>\
+                        <th>Phòng ban</th>\
+                        <th>Action</th>\
+                        <th></th>\
+                    </tr>\
+                </thead>\
+                <tbody style="text-align: center">';
+
+            for (let i = 0; i < list.length; i++) {
+                str += `<tr>\
+                    <td><input type="checkbox" value="${list[i].id}"></td>\
+                    <td>${list[i].maEmployee}</td>\
+                    <td>${list[i].nameEmployee}</td>\
+                    <td>${list[i].age}</td>\
+                    <td>${list[i].money}</td>\
+                    <td>${list[i].phong.name}</td>\
+                    <td><button onclick="editE(${list[i].id})" data-bs-toggle=modal data-bs-target=#myModal1"">Update</button></td>\
+                    <td><button onclick="deleteE(${list[i].id})">Delete</button></td>\
+                </tr>`;
+            }
+            str += '</tbody>';
+            document.getElementById("myTable").innerHTML = str;
+        })
+        axios.get('http://localhost:8080/phong').then(() => {
+            let data = res.data
+            let content;
+            for (let i = 0; i < data.length; i++) {
+                content += `<option value=${data[i].id}>${data[i].name}</option>`
+            }
+            document.getElementById("phongban").innerHTML = content;
+        })
+    }
+
+    showList();
+
+    function editE(id) {
+        let selectId = id;
+        axios.get(`http://localhost:8080/employee/${selectId}`).then((res) => {
+            let data = res.data;
+            let modalContent = `
+            <div class="modal" id="myModal1">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="exampleModalLabel" style="align-items: center;margin: auto;font-size: 13px">Chỉnh sửa Nhân viên </h5>
+                        </div>
+                        <div class="modal-body">
+                            <form role="form" novalidate="novalidate">
+                                <div class="form-group">
+                                    <label for="maNv">Mã Nhân viên</label>
+                                    <input type="text" class="form-control" id="maNv" value="${data.maEmployee}">
+                                </div>
+                                <div class="form-group">
+                                    <label for="name">Tên</label>
+                                    <input type="text" class="form-control" id="name" value="${data.nameEmployee}">
+                                </div>
+                                <div class="form-group">
+                                    <label for="age">Tuổi</label>
+                                    <input type="text" class="form-control" id="age" value="${data.age}">
+                                </div>
+                                <div class="form-group">
+                                    <label for="luong">Lương</label>
+                                    <input type="text" class="form-control" id="luong" value="${data.money}">
+                                </div>
+                                <div class="form-group">
+                                    <label for="phongban">Phòng ban</label>
+                                    <select name="transactionType_id" id="phongban">
+                                    </select>
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                                    <button class="btn btn-primary" onclick="updateE(${selectId})">Save changes</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>`;
+            document.body.insertAdjacentHTML('beforeend', modalContent);
+            $('#myModal1').modal('show');
+        })
+    }
+
+    function deleteE(id) {
+        let confirmDelete = confirm("Bạn có chắc muốn xóa nhân viên này?");
+        if (!confirmDelete) {
+            return;
+        }
+        axios.delete(`http://localhost:8080/employee/${id}`, {})
+            .then((res) => {
+                location.reload();
+            })
+            .catch((error) => {
+                console.error("Lỗi xóa nhân viên:", error);
+            });
+    }
+
+    function updateE(selectId) {
+        let updateData = {
+            maEmployee: document.getElementById("maNv").value,
+            nameEmployee: document.getElementById("name").value,
+            age: document.getElementById("age").value,
+            money: document.getElementById("luong").value,
+            phong: {
+                id: document.getElementById("phongban").value,
+            }
+        }
+
+        axios.put(`http://localhost:8080/employee/${selectId}`, updateData)
+            .then((res) => {
+                alert("Cập nhật thành công");
+                location.reload();
+            })
+            .catch((error) => {
+                console.error("Lỗi cập nhật nhân viên:", error);
+            });
+    }
+</script>
+</body>
+</html>
